@@ -2,7 +2,7 @@ function [Jopt,Zopt] = H2_Opt(A,B,E,C,D,G,H,nc,options,Zstruct,Jfeas,Zfeas,P)
 
 %Options
 epsilon = options(1);
-itmax = options(2);
+tol = options(2);
 
 %Matrices Dimensions
 nx = size(A,2);
@@ -28,6 +28,7 @@ while true
 
     %LMI description
     setlmis([])
+
     
     S = lmivar(1,[nx 1]);
     W = lmivar(1,[nw 1]);
@@ -41,6 +42,7 @@ while true
         Z = lmivar(3,[sR{1},sR{2};sR{3},zeros(Zstruct(3,1),Zstruct(2,2))]);
     end
 
+   
     ct = 1;
     lmiterm([-ct,1,1,S],1,1);
     
@@ -52,6 +54,7 @@ while true
     lmiterm([ct,2,1,0],(D'*D)\D'*C);
     lmiterm([ct,2,2,0],-inv(D'*D));
     
+   
     ct = ct+1;
     lmiterm([-ct,1,1,W],1,1);
     lmiterm([-ct,2,1,0],E);
@@ -92,7 +95,8 @@ while true
     if Jopt(ito+1)/Jopt(ito) >= 1 - epsilon
         break;  
     end
-    
 end
+
 return;
+
 end

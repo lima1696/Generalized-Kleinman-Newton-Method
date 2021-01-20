@@ -3,6 +3,7 @@ function [Jfeas,Zfeas,P,f] = H2_Feas(A,B,E,Cfeas,Dfeas,G,H,nc,options,Zstruct,C,
 %Options
 epsilon = options(1);
 itmax = options(2);
+tol = options(3);
 
 %Matrices Dimensions
 nx = size(A,2);
@@ -34,6 +35,7 @@ Cn = Cfeas - Dfeas/(Dfeas'*Dfeas)*Dfeas'*Cfeas;
 %Interations Number
 it = 0;
 
+
 f(it+1) = penalty;
 while true 
     
@@ -48,6 +50,7 @@ while true
     %LMI descriptions
     setlmis([])
 
+    
     S = lmivar(1,[nx 1]);
     W = lmivar(1,[nx 1]);
     X = lmivar(1,[nu 1]);
@@ -62,6 +65,7 @@ while true
         Z = lmivar(3,[sR{1},sR{2};sR{3},zeros(Zstruct(3,1),Zstruct(2,2))]);
     end
 
+    
     ct = 1;
     lmiterm([-ct,1,1,S],1,1);
     
@@ -74,6 +78,13 @@ while true
     lmiterm([ct,2,1,0],(Dfeas'*Dfeas)\Dfeas'*Cfeas);
     lmiterm([ct,2,2,0],-inv(Dfeas'*Dfeas));
     
+    if nc > 0
+         ct = ct+1;
+         lmiterm([-ct,1,1,0],tol);
+         lmiterm([-ct,2,1,Z],1,1);
+         lmiterm([-ct,2,2,0],tol);
+    end
+
     ct = ct+1;
     lmiterm([-ct,1,1,W],1,1);
     lmiterm([-ct,2,1,Y],1,1);
@@ -108,6 +119,7 @@ while true
     Yfeas = dec2mat(lmisys,xopt,Y);
     Zfeas = dec2mat(lmisys,xopt,Z);
 
+
     L = Zfeas*G + Yfeas ;
     AL = A+B*L;
     CL = Cfeas+Dfeas*L;
@@ -127,18 +139,21 @@ while true
         break;
     end
 
+
+    penalty_i = 2*sum(svd(Yfeas));
     penalty = penalty_i;
     f(it+1) = penalty;
 
     %Second Stop Condition
     if it > itmax
-        flag = 2;
+        flag = 3;
         break;
     end
 end
 
 if flag == 1
     return;  
+
 elseif flag == 2
     disp('Max number of iterations');
     return;
